@@ -1,27 +1,11 @@
-import tkinter as tk
-from pydantic import BaseModel
-from typing import List
 import customtkinter
-from frames.index import IndexFrame
-from frames.new_macro import NewMacroFrame
+
+from src.frames.index import IndexFrame
+from src.frames.new_macro import NewMacroFrame
+
 
 customtkinter.set_appearance_mode("Dark")  # Modes: "System" (standard), "Dark", "Light"
 customtkinter.set_default_color_theme("dark-blue")  # Themes: "blue" (standard), "green", "dark-blue"
-
-
-class StopCheck(BaseModel):
-    pos_x: int
-    pos_y: int
-    color: str
-
-
-class Macro(BaseModel):
-    title: str
-    sequence: List[str]
-    delay: float = 0
-    stop_check: StopCheck = None
-    pause_bind: str
-    stop_bind: str
 
 
 class App(customtkinter.CTk):
