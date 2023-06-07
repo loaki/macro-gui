@@ -1,4 +1,5 @@
 import customtkinter
+from pynput import keyboard
 
 from src.frames.index import IndexFrame
 from src.frames.new_macro import NewMacroFrame
@@ -6,6 +7,8 @@ from src.frames.new_macro import NewMacroFrame
 
 customtkinter.set_appearance_mode("Dark")  # Modes: "System" (standard), "Dark", "Light"
 customtkinter.set_default_color_theme("dark-blue")  # Themes: "blue" (standard), "green", "dark-blue"
+
+
 
 
 class App(customtkinter.CTk):
@@ -35,6 +38,18 @@ class App(customtkinter.CTk):
     def show_frame(self, page_name):
         frame = self.frames[page_name]
         frame.tkraise()
+
+
+    def on_press(self, key):
+        if key == keyboard.Key.esc:
+            return False  # stop listener
+        print(key)
+
+
+    def record(self):
+        listener = keyboard.Listener(on_press=self.on_press)
+        listener.start()  # start to listen on a separate thread
+        listener.join()
 
 
 if __name__ == "__main__":
