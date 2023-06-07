@@ -6,17 +6,17 @@ from src.frames.new_macro import NewMacroFrame
 
 
 customtkinter.set_appearance_mode("Dark")  # Modes: "System" (standard), "Dark", "Light"
-customtkinter.set_default_color_theme("dark-blue")  # Themes: "blue" (standard), "green", "dark-blue"
-
-
+customtkinter.set_default_color_theme(
+    "dark-blue"
+)  # Themes: "blue" (standard), "green", "dark-blue"
 
 
 class App(customtkinter.CTk):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.title("M A Q U E R E A U")
-        self.geometry("300x300")
-        self.resizable(False, False) 
+        self.geometry("300x600")
+        # self.resizable(False, False)
         self.attributes("-alpha", 0.8)
         self.iconbitmap("maquereau.ico")
         self.wm_attributes("-topmost", True)
@@ -31,25 +31,12 @@ class App(customtkinter.CTk):
             frame = F(master=container, controller=self)
             frame.grid(row=0, column=0, sticky="nsew")
             self.frames[F.__name__] = frame
-        
-        self.show_frame("IndexFrame")
 
+        self.show_frame("IndexFrame")
 
     def show_frame(self, page_name):
         frame = self.frames[page_name]
         frame.tkraise()
-
-
-    def on_press(self, key):
-        if key == keyboard.Key.esc:
-            return False  # stop listener
-        print(key)
-
-
-    def record(self):
-        listener = keyboard.Listener(on_press=self.on_press)
-        listener.start()  # start to listen on a separate thread
-        listener.join()
 
 
 if __name__ == "__main__":

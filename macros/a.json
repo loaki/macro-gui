@@ -1,0 +1,63 @@
+[
+    {
+        "key": "a",
+        "position": [
+            391,
+            305
+        ],
+        "delay": 0
+    },
+    {
+        "key": "s",
+        "position": [
+            391,
+            305
+        ],
+        "delay": 0
+    },
+    {
+        "key": "d",
+        "position": [
+            391,
+            305
+        ],
+        "delay": 0
+    },
+    {
+        "key": "s",
+        "position": [
+            391,
+            305
+        ],
+        "delay": 0
+    },
+    {
+        "key": "delay",
+        "position": [],
+        "delay": 1.4108997064172097
+    },
+    {
+        "key": "a",
+        "position": [
+            342,
+            365
+        ],
+        "delay": 0
+    },
+    {
+        "key": "a",
+        "position": [
+            342,
+            365
+        ],
+        "delay": 0
+    },
+    {
+        "key": "s",
+        "position": [
+            342,
+            365
+        ],
+        "delay": 0
+    }
+]
