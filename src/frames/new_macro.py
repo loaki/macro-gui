@@ -4,7 +4,6 @@ import mouse
 import keyboard
 import customtkinter
 import tkinter as tk
-import math
 
 
 class NewMacroFrame(customtkinter.CTkFrame):
@@ -12,7 +11,8 @@ class NewMacroFrame(customtkinter.CTkFrame):
         super().__init__(master, **kwargs)
         self.controller = controller
         self.recording = False
-        self.hook = False
+        self.prev_event = None
+        self.in_frame = True
         self.sequence = []
 
         self.label = customtkinter.CTkLabel(self, text="New Macro")
@@ -47,8 +47,7 @@ class NewMacroFrame(customtkinter.CTkFrame):
             from_=0,
             to=2,
             variable=self.delay_var,
-            width=100,
-            command=self.set_exp_value,
+            width=100
         )
         delay_slider.pack()
         delay_button = customtkinter.CTkButton(
@@ -71,8 +70,6 @@ class NewMacroFrame(customtkinter.CTkFrame):
         )
         save_button.pack()
 
-    def set_exp_value(self, val):
-        self.delay_var.set(math.exp(val) - 1)
 
     def append_delay(self):
         self.sequence.append(
@@ -84,55 +81,56 @@ class NewMacroFrame(customtkinter.CTkFrame):
         self.sequence_text.see(tk.END)
         self.update_idletasks()
 
+
     def event_key(self, e):
+        geometry = self.controller.winfo_geometry()
         if (
-            type(e) == mouse._mouse_event.ButtonEvent
-            and e.event_type == keyboard.KEY_DOWN
-            or type(e) == keyboard._keyboard_event.KeyboardEvent
-            and e.event_type == keyboard.KEY_DOWN
+            self.position and
+            self.position[0] > int(geometry.split("+")[1])
+            and self.position[0] < int(geometry.split("x")[0]) + int(geometry.split("+")[1])
+            and self.position[1] > int(geometry.split("+")[2])
+            and self.position[1] < int(geometry.split("x")[1].split("+")[0]) + int(geometry.split("+")[2])
         ):
-            self.hook = True
+            self.in_frame = True
+        elif self.position:
+            self.in_frame = False
         if type(e) == mouse._mouse_event.MoveEvent:
             self.position = [e.x, e.y]
         if (
-            self.hook
+            not self.in_frame
             and type(e) == mouse._mouse_event.ButtonEvent
-            and e.event_type == keyboard.KEY_UP
         ):
             self.sequence.append(
-                {"key": e.button, "position": self.position, "delay": 0}
+                {"key": e.button, "type": e.event_type, "position": self.position}
             )
             self.sequence_text.configure(state=tk.NORMAL)
-            self.sequence_text.insert(tk.END, str((e.button, self.position)))
+            self.sequence_text.insert(tk.END, str((e.button, e.event_type, self.position)))
             self.sequence_text.configure(state=tk.DISABLED)
             self.sequence_text.see(tk.END)
             self.update_idletasks()
         if (
-            self.hook
+            not self.in_frame
             and type(e) == keyboard._keyboard_event.KeyboardEvent
-            and e.event_type == keyboard.KEY_UP
-            and not keyboard.is_modifier(e.name)
+            and (not self.prev_event
+            or self.prev_event != [e.name, e.event_type])
         ):
             if e.name == "esc":
                 self.record_km()
                 return
-            if mod := next(
-                (k for k in keyboard.all_modifiers if keyboard.is_pressed(k)), None
-            ):
-                e.name = mod + "+" + e.name
-            self.sequence.append({"key": e.name, "position": self.position, "delay": 0})
+            self.prev_event = [e.name, e.event_type]
+            self.sequence.append({"key": e.name, "type": e.event_type, "position": self.position})
             self.sequence_text.configure(state=tk.NORMAL)
-            self.sequence_text.insert(tk.END, str(((e.name, self.position))))
+            self.sequence_text.insert(tk.END, str(((e.name, e.event_type, self.position))))
             self.sequence_text.configure(state=tk.DISABLED)
             self.sequence_text.see(tk.END)
             self.update_idletasks()
+
 
     def record_km(self):
         if self.recording:
             mouse.unhook(self.event_key)
             keyboard.unhook(self.event_key)
             self.recording = False
-            self.hook = False
             self.record_var.set("Record")
             self.name_input.configure(state=tk.NORMAL)
             self.update_idletasks()
@@ -145,6 +143,7 @@ class NewMacroFrame(customtkinter.CTkFrame):
             self.name_input.configure(state=tk.DISABLED)
             self.update_idletasks()
 
+
     def reset_record(self):
         if self.recording:
             self.record_km()
@@ -154,9 +153,11 @@ class NewMacroFrame(customtkinter.CTkFrame):
         self.sequence_text.configure(state=tk.DISABLED)
         self.update_idletasks()
 
+
     def cancel(self):
         self.reset_record()
         self.controller.show_frame("IndexFrame")
+
 
     def save(self):
         if self.name_var.get() and self.sequence:
@@ -164,4 +165,5 @@ class NewMacroFrame(customtkinter.CTkFrame):
                 os.path.join(os.getcwd(), f"macros/{self.name_var.get()}.json"), "w"
             ) as new_f:
                 new_f.write(json.dumps(self.sequence, indent=4))
+            self.reset_record()
             self.controller.show_frame("IndexFrame")

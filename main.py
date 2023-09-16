@@ -16,7 +16,7 @@ class App(customtkinter.CTk):
         super().__init__(*args, **kwargs)
         self.title("M A Q U E R E A U")
         self.geometry("300x600")
-        # self.resizable(False, False)
+        self.resizable(False, False)
         self.attributes("-alpha", 0.8)
         self.iconbitmap("maquereau.ico")
         self.wm_attributes("-topmost", True)
@@ -33,6 +33,7 @@ class App(customtkinter.CTk):
             self.frames[F.__name__] = frame
 
         self.show_frame("IndexFrame")
+
 
     def show_frame(self, page_name):
         frame = self.frames[page_name]
