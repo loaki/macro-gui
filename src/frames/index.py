@@ -30,7 +30,7 @@ class IndexFrame(customtkinter.CTkFrame):
 
     def label_clicked(self, event):
         if self.controller.winfo_height() == 600:
-            self.controller.geometry("300x20")
+            self.controller.geometry("300x28")
         else:
             self.controller.geometry("300x600")
 

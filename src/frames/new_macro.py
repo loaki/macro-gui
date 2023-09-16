@@ -3,6 +3,7 @@ import json
 import mouse
 import keyboard
 import customtkinter
+import pyautogui
 import tkinter as tk
 
 
@@ -11,9 +12,11 @@ class NewMacroFrame(customtkinter.CTkFrame):
         super().__init__(master, **kwargs)
         self.controller = controller
         self.recording = False
+        self.check = False
         self.prev_event = None
         self.in_frame = True
         self.sequence = []
+        vcmd = (self.register(self.validate_value), '%P')
 
         self.label = customtkinter.CTkLabel(self, text="New Macro")
         self.label.pack()
@@ -38,15 +41,17 @@ class NewMacroFrame(customtkinter.CTkFrame):
         self.sequence_text.pack()
 
         self.delay_var = tk.DoubleVar(value=0)
+        self.delay_var.trace("w", self.update_delay)
         delay_entry = customtkinter.CTkEntry(
             self, textvariable=self.delay_var, width=45, height=25
         )
+        delay_entry.configure(validate='key', validatecommand=vcmd)
         delay_entry.pack()
         delay_slider = customtkinter.CTkSlider(
             self,
             from_=0,
             to=2,
-            variable=self.delay_var,
+            variable=self.delay_var or 0,
             width=100
         )
         delay_slider.pack()
@@ -54,6 +59,12 @@ class NewMacroFrame(customtkinter.CTkFrame):
             self, text="Add Delay", command=lambda: self.append_delay()
         )
         delay_button.pack()
+
+        self.check_var = tk.StringVar(value="Add a color check")
+        self.check_button = customtkinter.CTkButton(
+            self, textvariable=self.check_var, command=lambda: self.check_color()
+        )
+        self.check_button.pack()
 
         reset_button = customtkinter.CTkButton(
             self, text="Reset", command=lambda: self.reset_record()
@@ -71,6 +82,23 @@ class NewMacroFrame(customtkinter.CTkFrame):
         save_button.pack()
 
 
+    def update_delay(self, *args):
+        try:
+            value = float(self.delay_var.get())
+            self.delay_var.set(value)
+        except:
+            self.delay_var.set(0)
+
+
+    def validate_value(self, value):
+        try:
+            if float(value) >= 0 and float(value) < 1000:
+                return True
+        except:
+            pass
+        return False
+
+
     def append_delay(self):
         self.sequence.append(
             {"key": "delay", "position": [], "delay": self.delay_var.get()}
@@ -82,7 +110,18 @@ class NewMacroFrame(customtkinter.CTkFrame):
         self.update_idletasks()
 
 
+    def check_color(self):
+        if self.check:
+            self.check = False
+            self.check_var.set("Add a color check")
+        elif self.recording:
+            self.check = True
+            self.check_var.set("Click on the zone")
+
+
     def event_key(self, e):
+        if type(e) == mouse._mouse_event.MoveEvent:
+            self.position = [e.x, e.y]
         geometry = self.controller.winfo_geometry()
         if (
             self.position and
@@ -94,10 +133,26 @@ class NewMacroFrame(customtkinter.CTkFrame):
             self.in_frame = True
         elif self.position:
             self.in_frame = False
-        if type(e) == mouse._mouse_event.MoveEvent:
-            self.position = [e.x, e.y]
+        if (not self.in_frame
+            and self.check
+            and type(e) == mouse._mouse_event.ButtonEvent
+        ):
+            self.check = False
+            self.check_var.set("Add a color check")
+            color = pyautogui.pixel(self.position[0], self.position[1])
+            self.sequence.append(
+                {"key": "check", "position": self.position, "color": color}
+            )
+            self.sequence_text.configure(state=tk.NORMAL)
+            self.sequence_text.insert(tk.END, str(("check", self.position, color)))
+            self.sequence_text.configure(state=tk.DISABLED)
+            self.sequence_text.see(tk.END)
+            self.update_idletasks()
+            self.record_km()
+            return
         if (
             not self.in_frame
+            and not self.check
             and type(e) == mouse._mouse_event.ButtonEvent
         ):
             self.sequence.append(
@@ -109,8 +164,7 @@ class NewMacroFrame(customtkinter.CTkFrame):
             self.sequence_text.see(tk.END)
             self.update_idletasks()
         if (
-            not self.in_frame
-            and type(e) == keyboard._keyboard_event.KeyboardEvent
+            type(e) == keyboard._keyboard_event.KeyboardEvent
             and (not self.prev_event
             or self.prev_event != [e.name, e.event_type])
         ):
@@ -131,6 +185,7 @@ class NewMacroFrame(customtkinter.CTkFrame):
             mouse.unhook(self.event_key)
             keyboard.unhook(self.event_key)
             self.recording = False
+            self.in_frame = True
             self.record_var.set("Record")
             self.name_input.configure(state=tk.NORMAL)
             self.update_idletasks()
